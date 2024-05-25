@@ -1,3 +1,4 @@
+import { randomBytes } from "crypto";
 import {
   type Request,
   type Response,
@@ -7,12 +8,31 @@ import {
 
 export const CommentRouter: Router = Router();
 
-CommentRouter.get("/", (req: Request, res: Response, next: NextFunction) => {
+interface Comment {
+  id: string;
+  content: string;
+}
+
+interface Comments {
+  [id: string]: Comment[];
+}
+
+const commentByPostId: Comments = {};
+
+CommentRouter.get("/posts/:id/comments", (req: Request, res: Response, next: NextFunction) => {
   res
     .status(200)
-    .send({
-      status: true,
-      statusCode: 200,
-      data: [{ msg: "you get data comment" }],
-    });
+    .send(commentByPostId[req.params.id] || []);
+});
+
+CommentRouter.post("/posts/:id/comments", (req: Request, res: Response, next: NextFunction) => {
+  const commentId = randomBytes(4).toString("hex");
+  const { content } = req.body;
+  const comments = commentByPostId[req.params.id] || [];
+  const comment: Comment = {id: commentId, content};
+  comments.push(comment);
+  commentByPostId[req.params.id] = comments;
+  res
+    .status(201)
+    .send(comments);
 });
